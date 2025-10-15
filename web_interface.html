@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .strength-meter {
+            height: 8px;
+            background: #e1e5e9;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .strength-weak { background: #ff4757; }
+        .strength-moderate { background: #ffa502; }
+        .strength-strong { background: #2ed573; }
+
+        .strength-text {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .requirements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .requirement.met {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .requirement.not-met {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .requirement-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .generated-password {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            word-break: break-all;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .recommendations {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .recommendations ul {
+            margin: 10px 0 0 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .requirements {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Password Strength Checker</h1>
+            <p>Evaluate your password security and generate strong passwords</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-group">
+                <label for="password">Enter Password:</label>
+                <input type="password" id="password" class="password-input" placeholder="Type your password here...">
+            </div>
+
+            <div class="strength-meter">
+                <div class="strength-fill" id="strengthFill"></div>
+            </div>
+            
+            <div class="strength-text" id="strengthText">Enter a password to check strength</div>
+
+            <div class="requirements" id="requirements"></div>
+
+            <div class="stats-grid" id="statsGrid" style="display: none;"></div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="checkPassword()">Check Strength</button>
+                <button class="btn btn-secondary" onclick="generatePassword()">Generate Password</button>
+                <button class="btn btn-success" onclick="copyToClipboard()" id="copyBtn" style="display: none;">Copy to Clipboard</button>
+            </div>
+
+            <div id="generatedPassword" class="generated-password" style="display: none;"></div>
+            <div id="warning" class="warning" style="display: none;"></div>
+            <div id="recommendations" class="recommendations" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        class PasswordStrengthChecker {
+            constructor() {
+                this.commonPasswords = new Set([
+                    '123456', 'password', '123456789', '12345678', '12345', 'qwerty', 'abc123',
+                    '111111', '1234567', '123123', 'admin', 'letmein', 'welcome', 'monkey',
+                    'password123', '1234567890', 'dragon', 'master', 'hello', 'freedom',
+                    'whatever', 'qazwsx', 'trustno1', 'jordan', 'harley', 'hunter', 'buster',
+                    'thomas', 'tigger', 'robert', 'soccer', 'batman', 'test', 'pass', 'killer',
+                    'hunter', 'mike', 'charlie', 'andrew', 'matthew', 'access', 'shadow',
+                    'michael', 'jessica', 'diamond', 'jordan', 'mustang', 'mickey', 'secret',
+                    'dallas', 'dennis', 'ginger', 'striker', 'hammer', 'silver', 'joseph',
+                    'blowme', 'spitfire', 'green', 'superman', 'bigdaddy', 'johnson', 'chester',
+                    'london', 'midnight', 'blue', 'fishing', 'david', 'maddog', 'eagles',
+                    'mackenzie', 'donna', 'murphy', 'frank', 'green', 'lucky', 'andrew',
+                    'charlie', 'michael', 'sarah', 'jessica', 'jordan', 'tiger', 'hunter',
+                    'michelle', 'chris', 'jessica', 'amanda', 'daniel', 'joshua', 'michael',
+                    'jennifer', 'thomas', 'jessica', 'amanda', 'daniel', 'joshua', 'michael',
+                    'jennifer', 'thomas', 'jessica', 'amanda', 'daniel', 'joshua', 'michael'
+                ]);
+            }
+
+            checkPasswordStrength(password) {
+                if (!password) {
+                    return {
+                        strength: "Weak",
+                        score: 0,
+                        entropy: 0,
+                        crackTime: "Instant",
+                        issues: ["Password is empty"],
+                        recommendations: ["Enter a password to check"],
+                        checks: {
+                            length: false,
+                            uppercase: false,
+                            lowercase: false,
+                            numbers: false,
+                            special: false
+                        }
+                    };
+                }
+
+                // Check against common passwords
+                if (this.commonPasswords.has(password.toLowerCase())) {
+                    return {
+                        strength: "Very Weak",
+                        score: 0,
+                        entropy: 0,
+                        crackTime: "Instant",
+                        issues: ["Password is in the top 1000 common passwords list"],
+                        recommendations: ["Choose a unique password that's not commonly used"],
+                        checks: {
+                            length: false,
+                            uppercase: false,
+                            lowercase: false,
+                            numbers: false,
+                            special: false
+                        }
+                    };
+                }
+
+                let score = 0;
+                const issues = [];
+                const recommendations = [];
+
+                // Length check
+                if (password.length < 8) {
+                    issues.push("Password is too short (minimum 8 characters)");
+                    recommendations.push("Increase password length to at least 8 characters");
+                } else if (password.length >= 12) {
+                    score += 2;
+                } else {
+                    score += 1;
+                }
+
+                // Character variety checks
+                const hasUpper = /[A-Z]/.test(password);
+                const hasLower = /[a-z]/.test(password);
+                const hasDigit = /\d/.test(password);
+                const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/.test(password);
+
+                if (hasUpper) {
+                    score += 1;
+                } else {
+                    issues.push("No uppercase letters");
+                    recommendations.push("Add uppercase letters (A-Z)");
+                }
+
+                if (hasLower) {
+                    score += 1;
+                } else {
+                    issues.push("No lowercase letters");
+                    recommendations.push("Add lowercase letters (a-z)");
+                }
+
+                if (hasDigit) {
+                    score += 1;
+                } else {
+                    issues.push("No numbers");
+                    recommendations.push("Add numbers (0-9)");
+                }
+
+                if (hasSpecial) {
+                    score += 1;
+                } else {
+                    issues.push("No special characters");
+                    recommendations.push("Add special characters (!@#$%^&*...)");
+                }
+
+                // Entropy calculation
+                const entropy = this.calculateEntropy(password);
+                const crackTime = this.estimateCrackTime(entropy);
+
+                // Determine strength
+                let strength;
+                if (score <= 2) {
+                    strength = "Weak";
+                } else if (score <= 4) {
+                    strength = "Moderate";
+                } else {
+                    strength = "Strong";
+                }
+
+                return {
+                    strength,
+                    score,
+                    entropy,
+                    crackTime,
+                    issues,
+                    recommendations,
+                    checks: {
+                        length: password.length >= 8,
+                        uppercase: hasUpper,
+                        lowercase: hasLower,
+                        numbers: hasDigit,
+                        special: hasSpecial
+                    }
+                };
+            }
+
+            calculateEntropy(password) {
+                if (!password) return 0;
+
+                let charsetSize = 0;
+                if (/[a-z]/.test(password)) charsetSize += 26;
+                if (/[A-Z]/.test(password)) charsetSize += 26;
+                if (/\d/.test(password)) charsetSize += 10;
+                if (/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/.test(password)) charsetSize += 32;
+
+                if (charsetSize === 0) return 0;
+                return Math.log2(Math.pow(charsetSize, password.length));
+            }
+
+            estimateCrackTime(entropy) {
+                if (entropy <= 0) return "Instant";
+
+                const attemptsPerSecond = 1000000000; // 1 billion attempts per second
+                const totalAttempts = Math.pow(2, entropy - 1);
+                const seconds = totalAttempts / attemptsPerSecond;
+
+                if (seconds < 1) return "Less than 1 second";
+                if (seconds < 60) return `${seconds.toFixed(1)} seconds`;
+                if (seconds < 3600) return `${(seconds / 60).toFixed(1)} minutes`;
+                if (seconds < 86400) return `${(seconds / 3600).toFixed(1)} hours`;
+                if (seconds < 31536000) return `${(seconds / 86400).toFixed(1)} days`;
+                return `${(seconds / 31536000).toFixed(1)} years`;
+            }
+
+            generateStrongPassword(length = 16, excludeSimilar = true) {
+                if (length < 8) length = 8;
+
+                let lowercase = 'abcdefghijklmnopqrstuvwxyz';
+                let uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let digits = '0123456789';
+                let special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+                if (excludeSimilar) {
+                    lowercase = lowercase.replace(/[li]/g, '');
+                    uppercase = uppercase.replace(/[IO]/g, '');
+                    digits = digits.replace(/[01]/g, '');
+                    special = special.replace(/[|I]/g, '');
+                }
+
+                // Ensure at least one character from each set
+                let password = [
+                    this.randomChar(lowercase),
+                    this.randomChar(uppercase),
+                    this.randomChar(digits),
+                    this.randomChar(special)
+                ];
+
+                // Fill remaining length
+                const allChars = lowercase + uppercase + digits + special;
+                for (let i = 0; i < length - 4; i++) {
+                    password.push(this.randomChar(allChars));
+                }
+
+                // Shuffle
+                for (let i = password.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [password[i], password[j]] = [password[j], password[i]];
+                }
+
+                return password.join('');
+            }
+
+            randomChar(str) {
+                return str.charAt(Math.floor(Math.random() * str.length));
+            }
+        }
+
+        const checker = new PasswordStrengthChecker();
+        let currentPassword = '';
+
+        // Live password checking
+        document.getElementById('password').addEventListener('input', function() {
+            currentPassword = this.value;
+            if (currentPassword) {
+                updateStrengthDisplay();
+            } else {
+                resetDisplay();
+            }
+        });
+
+        function updateStrengthDisplay() {
+            const result = checker.checkPasswordStrength(currentPassword);
+            
+            // Update strength meter
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            strengthFill.className = 'strength-fill';
+            strengthFill.style.width = '0%';
+            
+            if (result.strength === 'Very Weak') {
+                strengthFill.classList.add('strength-weak');
+                strengthFill.style.width = '20%';
+                strengthText.textContent = 'Very Weak - Extremely vulnerable';
+            } else if (result.strength === 'Weak') {
+                strengthFill.classList.add('strength-weak');
+                strengthFill.style.width = '40%';
+                strengthText.textContent = 'Weak - Needs improvement';
+            } else if (result.strength === 'Moderate') {
+                strengthFill.classList.add('strength-moderate');
+                strengthFill.style.width = '70%';
+                strengthText.textContent = 'Moderate - Good start';
+            } else {
+                strengthFill.classList.add('strength-strong');
+                strengthFill.style.width = '100%';
+                strengthText.textContent = 'Strong - Excellent security';
+            }
+
+            // Update requirements
+            updateRequirements(result.checks);
+            
+            // Update stats
+            updateStats(result);
+            
+            // Show/hide warnings and recommendations
+            showWarningsAndRecommendations(result);
+        }
+
+        function updateRequirements(checks) {
+            const requirementsDiv = document.getElementById('requirements');
+            requirementsDiv.innerHTML = '';
+
+            const requirements = [
+                { key: 'length', label: 'Minimum 8 characters', icon: '📏' },
+                { key: 'uppercase', label: 'Contains uppercase', icon: '🔠' },
+                { key: 'lowercase', label: 'Contains lowercase', icon: '🔡' },
+                { key: 'numbers', label: 'Contains numbers', icon: '🔢' },
+                { key: 'special', label: 'Contains special chars', icon: '🔣' }
+            ];
+
+            requirements.forEach(req => {
+                const div = document.createElement('div');
+                div.className = `requirement ${checks[req.key] ? 'met' : 'not-met'}`;
+                div.innerHTML = `
+                    <span class="requirement-icon">${checks[req.key] ? '✅' : '❌'}</span>
+                    <span>${req.label}</span>
+                `;
+                requirementsDiv.appendChild(div);
+            });
+        }
+
+        function updateStats(result) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.style.display = 'grid';
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${result.score}/6</div>
+                    <div class="stat-label">Security Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${result.entropy.toFixed(1)}</div>
+                    <div class="stat-label">Entropy (bits)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${result.crackTime}</div>
+                    <div class="stat-label">Crack Time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${currentPassword.length}</div>
+                    <div class="stat-label">Length</div>
+                </div>
+            `;
+        }
+
+        function showWarningsAndRecommendations(result) {
+            const warningDiv = document.getElementById('warning');
+            const recommendationsDiv = document.getElementById('recommendations');
+            
+            warningDiv.style.display = 'none';
+            recommendationsDiv.style.display = 'none';
+
+            if (result.strength === 'Very Weak') {
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = `
+                    <strong>⚠️ WARNING: This password is extremely weak!</strong><br>
+                    Using common passwords makes you vulnerable to:<br>
+                    • Dictionary attacks<br>
+                    • Credential stuffing<br>
+                    • Social engineering
+                `;
+            }
+
+            if (result.recommendations && result.recommendations.length > 0) {
+                recommendationsDiv.style.display = 'block';
+                recommendationsDiv.innerHTML = `
+                    <strong>💡 Recommendations:</strong>
+                    <ul>
+                        ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                `;
+            }
+        }
+
+        function resetDisplay() {
+            document.getElementById('strengthFill').style.width = '0%';
+            document.getElementById('strengthFill').className = 'strength-fill';
+            document.getElementById('strengthText').textContent = 'Enter a password to check strength';
+            document.getElementById('requirements').innerHTML = '';
+            document.getElementById('statsGrid').style.display = 'none';
+            document.getElementById('warning').style.display = 'none';
+            document.getElementById('recommendations').style.display = 'none';
+        }
+
+        function checkPassword() {
+            if (currentPassword) {
+                updateStrengthDisplay();
+            } else {
+                alert('Please enter a password first!');
+            }
+        }
+
+        function generatePassword() {
+            const length = prompt('Enter password length (8-50):', '16');
+            const lengthNum = parseInt(length);
+            
+            if (isNaN(lengthNum) || lengthNum < 8 || lengthNum > 50) {
+                alert('Invalid length. Using default length of 16.');
+                lengthNum = 16;
+            }
+
+            const excludeSimilar = confirm('Exclude similar characters (O/0, I/1, l/i)?');
+            const password = checker.generateStrongPassword(lengthNum, excludeSimilar);
+            
+            document.getElementById('generatedPassword').style.display = 'block';
+            document.getElementById('generatedPassword').textContent = password;
+            document.getElementById('copyBtn').style.display = 'block';
+            
+            // Auto-fill the password input
+            document.getElementById('password').value = password;
+            currentPassword = password;
+            updateStrengthDisplay();
+        }
+
+        function copyToClipboard() {
+            const password = document.getElementById('generatedPassword').textContent;
+            if (password) {
+                navigator.clipboard.writeText(password).then(() => {
+                    alert('Password copied to clipboard!');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = password;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Password copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html> 
